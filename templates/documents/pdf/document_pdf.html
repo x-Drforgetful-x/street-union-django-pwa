@@ -1,0 +1,78 @@
+{% load money_tags %}
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  body { font-family: Arial, sans-serif; color: #222; font-size: 12px; }
+  .header { display: flex; justify-content: space-between; border-bottom: 2px solid #d4a437; padding-bottom: 12px; margin-bottom: 20px; }
+  .title { font-size: 22px; font-weight: bold; }
+  table { width: 100%; border-collapse: collapse; margin-top: 16px; }
+  th, td { border: 1px solid #ddd; padding: 8px; }
+  th { background: #f5f5f5; text-align: left; }
+  .totals { margin-top: 20px; width: 280px; margin-left: auto; }
+  .totals td { border: none; padding: 4px 0; }
+  .grand { font-size: 16px; font-weight: bold; border-top: 1px solid #222; }
+</style>
+</head>
+<body>
+  <div class="header">
+    <div>
+      <div class="title">{% if document.document_type == 'quote' %}QUOTE{% else %}INVOICE{% endif %}</div>
+      <div>{{ document.number }}</div>
+      <div>Issue date: {{ document.issue_date }}</div>
+      <div>{% if document.due_date %}Due date: {{ document.due_date }}{% endif %}</div>
+    </div>
+    <div>
+      {% if company %}
+      <strong>{{ company.company_name }}</strong><br>
+      {{ company.address|linebreaksbr }}<br>
+      {{ company.email }}<br>
+      {{ company.phone }}<br>
+      VAT No: {{ company.vat_number }}
+      {% endif %}
+    </div>
+  </div>
+
+  <p><strong>Bill To:</strong><br>
+  {{ document.client.client_name }}<br>
+  {{ document.client.company_name }}<br>
+  {{ document.client.address|linebreaksbr }}<br>
+  {{ document.client.email }} | {{ document.client.phone }}</p>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Description</th>
+        <th>Qty</th>
+        <th>Unit Price</th>
+        <th>VAT</th>
+        <th>Line Total</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for item in document.items.all %}
+      <tr>
+        <td>{{ item.description }}</td>
+        <td>{{ item.quantity|qty }}</td>
+        <td>{{ item.unit_price|money }}</td>
+        <td>{% if item.is_vatable %}{{ document.vat_rate|percent_clean }}{% else %}0%{% endif %}</td>
+        <td>{{ item.line_total|money }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <table class="totals">
+    <tr><td>Subtotal</td><td>{{ document.subtotal|money }}</td></tr>
+    <tr><td>VAT</td><td>{{ document.vat_amount|money }}</td></tr>
+    <tr class="grand"><td>Total</td><td>{{ document.total_amount|money }}</td></tr>
+  </table>
+
+  <div style="margin-top: 24px;">
+    <p><strong>Notes:</strong> {{ document.notes }}</p>
+    <p><strong>Terms:</strong> {{ document.terms }}</p>
+    {% if company and company.footer_note %}<p>{{ company.footer_note }}</p>{% endif %}
+  </div>
+</body>
+</html>

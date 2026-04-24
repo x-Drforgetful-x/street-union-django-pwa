@@ -1,0 +1,125 @@
+{% extends 'base.html' %}
+{% load form_tags %}
+{% block title %}{{ title }}{% endblock %}
+{% block content %}
+<div class="row g-4">
+    <div class="col-lg-8">
+        <div class="card border-0 shadow-sm rounded-4 premium-card">
+            <div class="card-body p-4">
+                <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+                    <div>
+                        <div class="page-section-kicker mb-2">Premium Document Builder</div>
+                        <h1 class="h4 mb-1">{{ title }}</h1>
+                        <p class="text-muted mb-0">Create a branded quote, invoice, or sales order with live numbering, premium styling, and PDF saving.</p>
+                    </div>
+                </div>
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="row g-3">
+                        {% for field in form %}
+                        <div class="{% if field.name == 'notes' or field.name == 'terms' %}col-12{% else %}col-md-6{% endif %}">
+                            <label class="form-label fw-semibold">{{ field.label }}</label>
+                            {% if field.name == 'number' %}
+                                <div class="document-number-box">{{ field|add_class:'form-control border-0 bg-transparent fw-bold p-0 document-number-input' }}</div>
+                                <div class="form-text">Generated automatically using the prefix and the next live number for the selected document type.</div>
+                            {% elif field.field.widget.input_type == 'checkbox' %}
+                                <div class="form-check mt-2">{{ field }} <label class="form-check-label">{{ field.label }}</label></div>
+                            {% else %}
+                                {% if field.name == 'document_type' %}
+                                    {{ field|add_class:'form-select form-select-lg document-type-select' }}
+                                {% elif field.name == 'notes' or field.name == 'terms' %}
+                                    {{ field|add_class:'form-control form-control-lg text-area-premium' }}
+                                {% else %}
+                                    {{ field|add_class:'form-control form-control-lg' }}
+                                {% endif %}
+                            {% endif %}
+                            {% if field.errors %}<div class="text-danger small">{{ field.errors|join:', ' }}</div>{% endif %}
+                        </div>
+                        {% endfor %}
+                    </div>
+
+                    <hr class="my-4">
+                    <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+                        <h2 class="h5 mb-0">Line Items</h2>
+                        <p class="text-muted mb-0 small">Leave unused rows empty.</p>
+                    </div>
+                    {{ formset.management_form }}
+                    {% for item_form in formset %}
+                        <div class="border rounded-4 p-3 mb-3 bg-light-subtle line-item-card">
+                            <div class="row g-3">
+                                {% for field in item_form.visible_fields %}
+                                <div class="col-md-6">
+                                    <label class="form-label">{{ field.label }}</label>
+                                    {% if field.field.widget.input_type == 'checkbox' %}
+                                        <div class="form-check mt-2">{{ field }} <label class="form-check-label">Vatable item</label></div>
+                                    {% else %}
+                                        {{ field|add_class:'form-control form-control-lg' }}
+                                    {% endif %}
+                                    {% if field.errors %}<div class="text-danger small">{{ field.errors|join:', ' }}</div>{% endif %}
+                                </div>
+                                {% endfor %}
+                            </div>
+                            {% for hidden in item_form.hidden_fields %}{{ hidden }}{% endfor %}
+                        </div>
+                    {% endfor %}
+
+                    <button class="btn btn-warning" type="submit">Save and Generate PDF</button>
+                </form>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-4">
+        <div class="card border-0 shadow-sm rounded-4 mb-4 premium-card">
+            <div class="card-body p-4">
+                <h2 class="h5">What happens on save</h2>
+                <ul class="mb-0">
+                    <li>The document number updates based on the type you pick.</li>
+                    <li>The record is saved to the database.</li>
+                    <li>Line items and VAT totals are calculated.</li>
+                    <li>A branded PDF is generated automatically.</li>
+                    <li>The PDF file path is stored on the record.</li>
+                </ul>
+            </div>
+        </div>
+        <div class="card border-0 shadow-sm rounded-4 premium-card">
+            <div class="card-body p-4">
+                <h2 class="h5">Before you start</h2>
+                <p class="mb-0 text-muted">Open <strong>Company Settings</strong> and add your logo, company details, VAT info, banking details, and prefixes so your documents stand out properly.</p>
+            </div>
+        </div>
+    </div>
+</div>
+{{ next_numbers|json_script:"next-number-map" }}
+<script>
+const typeSelect = document.querySelector('.document-type-select');
+const numberInput = document.querySelector('.document-number-input');
+const numberMapScript = document.getElementById('next-number-map');
+const nextNumberUrl = "{{ next_number_url }}";
+let nextNumberMap = {};
+if (numberMapScript) {
+  try { nextNumberMap = JSON.parse(numberMapScript.textContent); } catch (e) { nextNumberMap = {}; }
+}
+async function refreshDocumentNumber() {
+  if (!typeSelect || !numberInput) return;
+  const selectedType = typeSelect.value || 'quote';
+  if (nextNumberMap[selectedType]) {
+    numberInput.value = nextNumberMap[selectedType];
+  }
+  try {
+    const response = await fetch(`${nextNumberUrl}?type=${encodeURIComponent(selectedType)}`, { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
+    if (!response.ok) return;
+    const data = await response.json();
+    if (data.number) {
+      numberInput.value = data.number;
+      nextNumberMap[selectedType] = data.number;
+    }
+  } catch (error) {
+    console.warn('Could not fetch next document number', error);
+  }
+}
+if (typeSelect && numberInput) {
+  typeSelect.addEventListener('change', refreshDocumentNumber);
+  refreshDocumentNumber();
+}
+</script>
+{% endblock %}

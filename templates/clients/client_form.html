@@ -1,0 +1,25 @@
+{% extends 'base.html' %}
+{% load form_tags %}
+{% block title %}Client Form{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card border-0 shadow-sm rounded-4">
+            <div class="card-body p-4">
+                <h1 class="h4 mb-4">Client Form</h1>
+                <form method="post">
+                    {% csrf_token %}
+                    {% for field in form %}
+                        <div class="mb-3">
+                            <label class="form-label">{{ field.label }}</label>
+                            {{ field|add_class:'form-control' }}
+                            {% if field.errors %}<div class="text-danger small">{{ field.errors|join:', ' }}</div>{% endif %}
+                        </div>
+                    {% endfor %}
+                    <button class="btn btn-warning" type="submit">Save Client</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

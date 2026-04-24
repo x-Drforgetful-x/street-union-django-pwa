@@ -1,0 +1,195 @@
+{% extends 'base.html' %}
+{% load money_tags %}
+{% block title %}Dashboard{% endblock %}
+{% block content %}
+<div class="hero-panel premium-hero mb-4">
+    <div>
+        <p class="text-uppercase hero-kicker mb-2">Street Union Collective</p>
+        <h1 class="display-6 fw-bold mb-2">Finance, quotes, invoices, and sales orders</h1>
+        <p class="mb-0 text-secondary">Track paid, part paid, unpaid totals, document performance, and convert approved quotes into invoices fast.</p>
+    </div>
+    <div class="d-flex gap-2 flex-wrap">
+        <a class="btn btn-warning" href="{% url 'document-create' %}">Create Document</a>
+        <a class="btn btn-dark" href="{% url 'document-list' %}">View All Documents</a>
+        <a class="btn btn-outline-dark" href="{% url 'company-settings' %}">Update Company Info</a>
+    </div>
+</div>
+
+<div class="row g-4 mb-4">
+    <div class="col-md-6 col-xl-3">
+        <div class="card metric-card border-0 shadow-sm h-100">
+            <div class="card-body">
+                <p class="text-muted mb-2">Quotes Created</p>
+                <div class="metric-value">{{ quote_count }}</div>
+                <div class="small text-muted">Total quote value: <strong>{{ quote_total_amount|money }}</strong></div>
+                <div class="small text-muted">Open quotes: {{ open_quotes }} · {{ open_quote_amount|money }}</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6 col-xl-3">
+        <div class="card metric-card border-0 shadow-sm h-100">
+            <div class="card-body">
+                <p class="text-muted mb-2">Invoices Created</p>
+                <div class="metric-value">{{ invoice_count }}</div>
+                <div class="small text-muted">Total invoice value: <strong>{{ invoice_total_amount|money }}</strong></div>
+                <div class="small text-muted">Unpaid invoices: {{ unpaid_invoices }} · {{ outstanding_amount|money }}</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6 col-xl-3">
+        <div class="card metric-card border-0 shadow-sm h-100">
+            <div class="card-body">
+                <p class="text-muted mb-2">Sales Orders</p>
+                <div class="metric-value">{{ sales_order_count }}</div>
+                <div class="small text-muted">Total sales order value: <strong>{{ sales_order_amount|money }}</strong></div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6 col-xl-3">
+        <div class="card summary-box border-0 shadow-sm h-100"><div class="card-body"><p class="text-muted mb-2">Outstanding To Be Paid</p><div class="metric-value text-white">{{ outstanding_amount|money }}</div><div class="small text-muted">From unpaid and partial invoices</div></div></div>
+    </div>
+</div>
+
+<div class="row g-4 mb-4">
+    <div class="col-md-4">
+        <div class="card pipeline-card quote-pipeline border-0 shadow-sm h-100">
+            <div class="card-body">
+                <p class="text-uppercase amount-kicker mb-2">Quote Pipeline</p>
+                <div class="metric-value">{{ open_quote_amount|money }}</div>
+                <div class="small">Open quote value not yet invoiced</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card pipeline-card invoice-pipeline border-0 shadow-sm h-100">
+            <div class="card-body">
+                <p class="text-uppercase amount-kicker mb-2">Invoice Value</p>
+                <div class="metric-value">{{ invoice_total_amount|money }}</div>
+                <div class="small">All invoices created</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card pipeline-card sales-pipeline border-0 shadow-sm h-100">
+            <div class="card-body">
+                <p class="text-uppercase amount-kicker mb-2">Sales Order Value</p>
+                <div class="metric-value">{{ sales_order_amount|money }}</div>
+                <div class="small">Confirmed sales orders</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4 mb-4">
+    <div class="col-md-4">
+        <div class="card payment-card paid-card border-0 shadow-sm h-100"><div class="card-body"><p class="text-uppercase amount-kicker mb-2">Paid Amount</p><div class="metric-value">{{ paid_amount|money }}</div><div class="small">Invoices fully paid</div></div></div>
+    </div>
+    <div class="col-md-4">
+        <div class="card payment-card partial-card border-0 shadow-sm h-100"><div class="card-body"><p class="text-uppercase amount-kicker mb-2">Part Paid Amount</p><div class="metric-value">{{ partial_amount|money }}</div><div class="small">Invoices with partial payment status</div></div></div>
+    </div>
+    <div class="col-md-4">
+        <div class="card payment-card unpaid-card border-0 shadow-sm h-100"><div class="card-body"><p class="text-uppercase amount-kicker mb-2">Unpaid Amount</p><div class="metric-value">{{ unpaid_amount|money }}</div><div class="small">Invoices still unpaid</div></div></div>
+    </div>
+</div>
+
+<div class="row g-4 mb-4">
+    <div class="col-lg-8">
+        <div class="card border-0 shadow-sm h-100 premium-card">
+            <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                <div>
+                    <h5 class="mb-1">Sales Dashboard Chart</h5>
+                    <p class="text-muted small mb-0">Last 6 months by document value</p>
+                </div>
+            </div>
+            <div class="card-body">
+                <canvas id="salesChart" height="120"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-4">
+        <div class="card border-0 shadow-sm mb-4 premium-card">
+            <div class="card-body">
+                <h5 class="mb-3">Company Snapshot</h5>
+                {% if company %}
+                    <div class="d-flex align-items-center gap-3 mb-3">
+                        {% if company.logo %}<img src="{{ company.logo.url }}" alt="{{ company.company_name }}" class="system-logo-preview">{% endif %}
+                    </div>
+                    <p class="mb-1 fw-semibold">{{ company.company_name }}</p>
+                    <p class="text-muted small mb-1">{{ company.email }}</p>
+                    <p class="text-muted small mb-1">{{ company.phone }}</p>
+                    <p class="text-muted small mb-0">{{ company.vat_number|default:'Add VAT number in settings' }}</p>
+                {% else %}
+                    <div class="info-highlight">Open Company Settings and add your logo, contact details, VAT number, and prefixes.</div>
+                {% endif %}
+            </div>
+        </div>
+        <div class="card border-0 shadow-sm premium-card">
+            <div class="card-body p-4">
+                <h5 class="mb-3">Quick Links</h5>
+                <div class="d-grid gap-2">
+                    <a class="btn btn-warning" href="{% url 'document-create' %}?type=quote">New Quote</a>
+                    <a class="btn btn-dark" href="{% url 'document-create' %}?type=invoice">New Invoice</a>
+                    <a class="btn btn-outline-dark" href="{% url 'document-create' %}?type=sales_order">New Sales Order</a>
+                    <a class="btn btn-outline-dark" href="{% url 'client-list' %}">Manage Clients</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4 mb-4">
+    <div class="col-lg-12">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Recent Documents</h5>
+                <a class="btn btn-sm btn-outline-dark" href="{% url 'document-list' %}">View all</a>
+            </div>
+            <div class="table-responsive">
+                <table class="table align-middle mb-0">
+                    <thead>
+                        <tr><th>Number</th><th>Type</th><th>Client</th><th>Status</th><th class="money-cell">Total</th><th>PDF</th></tr>
+                    </thead>
+                    <tbody>
+                        {% for document in recent_documents %}
+                        <tr>
+                            <td><a href="{% url 'document-detail' document.pk %}" class="fw-semibold text-decoration-none">{{ document.number }}</a></td>
+                            <td>{{ document.get_document_type_display }}</td>
+                            <td>{{ document.client }}</td>
+                            <td><span class="status-pill {{ document.status }}">{{ document.get_status_display }}</span></td>
+                            <td class="money-cell">{{ document.total_amount|money }}</td>
+                            <td>{% if document.pdf_file %}<a href="{{ document.pdf_file.url }}" target="_blank">Open PDF</a>{% else %}-{% endif %}</td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="6" class="text-center py-4 text-muted">No documents yet.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+const salesData = {{ chart_data_json|safe }};
+const ctx = document.getElementById('salesChart');
+if (ctx) {
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: salesData.map(item => item.label),
+            datasets: [
+                { label: 'Quotes', data: salesData.map(item => item.quote), backgroundColor: '#d4a437' },
+                { label: 'Invoices', data: salesData.map(item => item.invoice), backgroundColor: '#111111' },
+                { label: 'Sales Orders', data: salesData.map(item => item.sales_order), backgroundColor: '#475467' },
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: { y: { beginAtZero: true } }
+        }
+    });
+}
+</script>
+{% endblock %}

@@ -1,0 +1,47 @@
+{% extends 'base.html' %}
+{% load money_tags %}
+{% block title %}Delete {{ document.number }}{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-7">
+        <div class="delete-hero card border-0 shadow-sm premium-card">
+            <div class="card-body p-5">
+                <span class="danger-pill mb-3">Delete Confirmation</span>
+                <h1 class="h3 mb-3">Delete {{ document.get_document_type_display }} {{ document.number }}?</h1>
+                <p class="text-muted mb-4">
+                    This will permanently remove the document record and its saved PDF file from the system.
+                    Please make sure you have exported or backed up anything you still need.
+                </p>
+
+                <div class="delete-summary mb-4">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <small class="text-muted d-block">Client</small>
+                            <strong>{{ document.client }}</strong>
+                        </div>
+                        <div class="col-md-6">
+                            <small class="text-muted d-block">Total</small>
+                            <strong>{{ document.total_amount|money }}</strong>
+                        </div>
+                        <div class="col-md-6">
+                            <small class="text-muted d-block">Status</small>
+                            <strong>{{ document.get_status_display }}</strong>
+                        </div>
+                        <div class="col-md-6">
+                            <small class="text-muted d-block">Issue Date</small>
+                            <strong>{{ document.issue_date }}</strong>
+                        </div>
+                    </div>
+                </div>
+
+                <form method="post" class="d-flex gap-2 flex-wrap">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger px-4">Yes, Delete Document</button>
+                    <a href="{% url 'document-detail' document.pk %}" class="btn btn-outline-dark px-4">Cancel</a>
+                    <a href="{% url 'document-list' %}" class="btn btn-light px-4">Back to Documents</a>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

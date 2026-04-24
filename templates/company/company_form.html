@@ -1,0 +1,57 @@
+{% extends 'base.html' %}
+{% load form_tags %}
+{% block title %}Company Settings{% endblock %}
+{% block content %}
+<div class="row g-4">
+    <div class="col-lg-8">
+        <div class="card border-0 shadow-sm rounded-4">
+            <div class="card-body p-4">
+                <h1 class="h4 mb-1">Company Settings</h1>
+                <p class="text-muted mb-4">Add your company information, logo, banking details, VAT settings, currency, and automatic prefixes for quotes, invoices, and sales orders.</p>
+                <form method="post" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    <div class="row g-3">
+                        {% for field in form %}
+                        <div class="{% if field.name in 'address payment_terms footer_note' %}col-12{% else %}col-md-6{% endif %}">
+                            <label class="form-label fw-semibold">{{ field.label }}</label>
+                            {% if field.field.widget.input_type == 'checkbox' %}
+                                <div class="form-check mt-2">{{ field }} <label class="form-check-label">VAT registered company</label></div>
+                            {% else %}
+                                {{ field|add_class:'form-control' }}
+                            {% endif %}
+                            {% if field.errors %}<div class="text-danger small">{{ field.errors|join:', ' }}</div>{% endif %}
+                        </div>
+                        {% endfor %}
+                    </div>
+                    <button type="submit" class="btn btn-warning mt-4">Save Company Settings</button>
+                </form>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-4">
+        <div class="card border-0 shadow-sm rounded-4 mb-4">
+            <div class="card-body p-4">
+                <h2 class="h5">Logo Preview</h2>
+                {% if company and company.logo %}
+                    <img src="{{ company.logo.url }}" alt="Company Logo" class="system-logo-preview mt-2">
+                {% else %}
+                    <div class="document-number-box mt-2">Upload your logo here so it shows on the dashboard and PDF.</div>
+                {% endif %}
+            </div>
+        </div>
+        <div class="card border-0 shadow-sm rounded-4">
+            <div class="card-body p-4">
+                <h2 class="h5">Stand out tips</h2>
+                <ul class="mb-0">
+                    <li>Add your real company logo.</li>
+                    <li>Set quote, invoice, and sales order prefixes.</li>
+                    <li>Choose the currency for all totals and PDFs.</li>
+                    <li>Add your VAT number and payment terms.</li>
+                    <li>Add banking details for invoices.</li>
+                    <li>Use a footer note for your brand message.</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
